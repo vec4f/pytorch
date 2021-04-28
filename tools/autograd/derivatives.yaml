@@ -348,13 +348,22 @@
 
 - name: complex(Tensor real, Tensor imag) -> Tensor
   real: at::real(grad)
-  imag: at::imag(grad)
+  imag: "grad.is_conj() ? at::imag(grad.resolve_conj()) : at::imag(grad)"
 
 - name: polar(Tensor abs, Tensor angle) -> Tensor
   abs, angle: polar_backward(grad, result)
 
-- name: _conj(Tensor self) -> Tensor
+- name: _conj(Tensor(a) self) -> Tensor(a)
   self: grad.conj()
+
+- name: resolve_conj(Tensor(a) self) -> Tensor(a)
+  self: grad
+
+- name: resolve_conj_(Tensor(a!) self) -> Tensor(a!)
+  self: grad
+
+- name: conj_physical(Tensor self) -> Tensor
+  self: grad.conj_physical()
 
 - name: copysign.Tensor(Tensor self, Tensor other) -> Tensor
   self: copysign_tensor_self_backward(grad, self, result)
@@ -618,7 +627,7 @@
   values: grad.index(indices)
 
 - name: index_select(Tensor self, int dim, Tensor index) -> Tensor
-  self: index_select_backward(grad, self.sizes(), dim, index)
+  self: "self.is_conj() ? index_select_backward(grad.conj(), self.sizes(), dim, index) : index_select_backward(grad, self.sizes(), dim, index)"
   index: non_differentiable
 
 - name: inverse(Tensor self) -> Tensor
@@ -737,7 +746,7 @@
   mask: non_differentiable
 
 - name: masked_select(Tensor self, Tensor mask) -> Tensor
-  self: masked_select_backward(grad, self, mask)
+  self: "self.is_conj() ? masked_select_backward(grad.conj(), self, mask) : masked_select_backward(grad, self, mask)"
   mask: non_differentiable
 
 - name: matrix_exp(Tensor self) -> Tensor
@@ -1247,11 +1256,15 @@
 - name: view.dtype(Tensor(a) self, ScalarType dtype) -> Tensor(a)
   output_differentiability: [False]
 
+# If the conj bit for self is set, this is effectively a fused conj() and view_as_real
+- name: view_as_real_physical(Tensor(a) self) -> Tensor(a)
+  self: "self.is_conj() ? at::view_as_complex(grad.contiguous()) : at::view_as_complex(grad.contiguous()).conj()"
+
 - name: view_as_real(Tensor(a) self) -> Tensor(a)
   self: at::view_as_complex(grad.contiguous()) # gx0 + 1j * gx1
 
 - name: view_as_complex(Tensor(a) self) -> Tensor(a)
-  self: at::view_as_real(grad.contiguous()) # [gx, gy]
+  self: at::view_as_real(grad.resolve_conj().contiguous()) # [gx, gy]
 
 - name: _s_where(Tensor condition, Tensor self, Tensor other) -> Tensor
   condition: non_differentiable
