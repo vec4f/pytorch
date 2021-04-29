@@ -314,7 +314,9 @@ parseWireSections(const void* data, size_t data_size) {
   return out;
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static const char* kMeta = "meta";
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static const char* kPayload = "payload";
 }; // namespace
 
@@ -579,6 +581,7 @@ void populateRemoteProfiledEvents(
 
 FutureFactoryRegistry& FutureFactoryRegistry::getInstance() {
   // Leaky singleton to avoid module destructor races.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   static FutureFactoryRegistry* registry = new FutureFactoryRegistry();
   return *registry;
 }

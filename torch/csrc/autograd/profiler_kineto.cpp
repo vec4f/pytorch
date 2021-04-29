@@ -41,6 +41,7 @@ inline int64_t getTimeUs() {
 // Caching linux pids and tids is not advisable in the general case,
 // but this is only for profiling purposes and we don't need to handle
 // special cases during fork, clone etc.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static thread_local pid_t cachedTid;
 
 std::string shapesToStr(const std::vector<std::vector<int64_t>>& shapes);
